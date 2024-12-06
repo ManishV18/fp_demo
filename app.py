@@ -1,47 +1,74 @@
-from flask import Flask, render_template, request
-import requests
-from bs4 import BeautifulSoup
+from flask import Flask, render_template, request, jsonify
 from transformers import pipeline
+from pytube import YouTube
+import os
+#from moviepy.editor import AudioFileClip
 
-# Initialize Flask app
+import time
+
+
+
 app = Flask(__name__)
 
-# Initialize the summarizer
-summarizer = pipeline("summarization")
+def download_audio_from_youtube(url, output_path):
+    # """Download audio from a YouTube video."""
+    # yt = YouTube(url)
+    
+    # # Extract only the audio stream
+    # audio_stream = yt.streams.filter(only_audio=True).first()
+    
+    # # Download the audio
+    # out_file = audio_stream.download(output_path=output_path)
+    
+    # # Rename the file to .mp3
+    # base, ext = os.path.splitext(out_file)
+    # new_file = base + '.mp3'
+    # os.rename(out_file, new_file)
+    
+    # return new_file
 
-# Function to fetch and summarize content from a URL
-def fetch_and_summarize(url):
-    # Fetch the content from the URL
-    response = requests.get(url)
+    return "Done"
     
-    if response.status_code != 200:
-        return "Error: Unable to fetch the content."
-    
-    # Parse the HTML content
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Extract the text from the HTML (you can customize this)
-    paragraphs = soup.find_all('p')
-    text = " ".join([para.get_text() for para in paragraphs])
-    
-    if len(text) == 0:
-        return "Error: No text found to summarize."
-    
-    # Generate the summary using transformers
-    summary = summarizer(text, max_length=200, min_length=50, do_sample=False)
-    
-    return summary[0]['summary_text']
+def summarize_text(text):
+    # """Summarize text using Hugging Face Transformers."""
+    # summarizer = pipeline("summarization", model="google/pegasus-xsum")
+    # tokenizer_kwargs = {'truncation': True, 'max_length': 512}
+    # summary = summarizer(text, min_length=30, do_sample=False, **tokenizer_kwargs)
+    # return summary[0]['summary_text']
 
-# Define the route for the home page
-@app.route("/", methods=["GET", "POST"])
-def home():
-    if request.method == "POST":
-        url = request.form["url"]
+    output = "This is the final summary."
+
+    return output
+    
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    summary = None
+    if request.method == 'POST':
+        url = request.form.get('url')
         if url:
-            summary = fetch_and_summarize(url)
-            return render_template("index.html", summary=summary, url=url)
-    return render_template("index.html", summary=None)
+            try:
+                # # Step 1: Download audio from YouTube
+                # audio_path = "temp_audio.mp3"
+                # audio_file = download_audio_from_youtube(url, ".")
 
-# Run the Flask app
-if __name__ == "__main__":
-    app.run(debug=True)
+                # # Step 2: Extract text from audio using Hugging Face's pipeline
+                # model = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-large-960h-lv60-self")
+                # transcription = model(audio_file)['text']
+
+                # # Step 3: Summarize the transcription
+                # summary = summarize_text(transcription)
+
+                time.sleep(5)
+
+                summary = "This is the final summary."
+
+                
+                # Cleanup
+                #os.remove(audio_file)
+
+            except Exception as e:
+                summary = f"Error: {str(e)}"
+    return render_template('index.html', summary=summary)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
